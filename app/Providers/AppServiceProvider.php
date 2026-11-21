@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Pixelforge\PixelforgeClient;
+use App\Services\Pixelforge\Pricing\Pricing;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(Pricing::class, fn () => new Pricing(
+            markupBasisPoints: config()->integer('pixelforge.markup_basis_points'),
+        ));
+
+        $this->app->bind(PixelforgeClient::class, fn () => new PixelforgeClient(
+            baseUrl: config()->string('pixelforge.base_url'),
+            apiKey: config('pixelforge.api_key'),
+        ));
     }
 
     /**
