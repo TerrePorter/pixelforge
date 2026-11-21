@@ -164,7 +164,7 @@ cloudflared tunnel --url http://localhost:8000
 
 ## Deploying
 
-Any host that runs Laravel works; Laravel Cloud is the simplest. You need:
+Any host that runs Laravel works. You need:
 
 - a database (Postgres recommended), and `php artisan migrate --force` on deploy,
 - a **queue worker** (`php artisan queue:work`) and the **scheduler** (`schedule:run` every
@@ -173,6 +173,35 @@ Any host that runs Laravel works; Laravel Cloud is the simplest. You need:
   `https://<your-domain>/webhooks/pixelforge` and its secret in `PIXELFORGE_WEBHOOK_SECRET`.
   Because `/v1/usage` is reported per key, this is also what makes the admin report match
   Pixelforge exactly.
+
+### On a server (EC2 or any VM)
+
+[`deploy/`](deploy/) has the server configs. Each file says where it goes and what to change
+for Ubuntu or Amazon Linux / RHEL; replace `your-domain` and `/var/www/pixelforge` in them.
+
+| File                                       | What it is                                                              |
+| ------------------------------------------ | ----------------------------------------------------------------------- |
+| `deploy/nginx/pixelforge.conf`             | nginx site with PHP-FPM (use this **or** Apache)                        |
+| `deploy/apache/pixelforge.conf`            | Apache httpd virtual host with PHP-FPM; rewrites via `.htaccess`        |
+| `deploy/supervisor/pixelforge-worker.conf` | Queue worker under supervisor (use this **or** systemd)                 |
+| `deploy/systemd/pixelforge-worker.service` | Queue worker as a systemd service (Amazon Linux 2023 has no supervisor) |
+| `deploy/cron/pixelforge`                   | Scheduler entry for `/etc/cron.d`                                       |
+| `deploy/deploy.sh`                         | Redeploy: pull, install, build, migrate, cache, restart the worker      |
+
+First setup, on Ubuntu 24.04 (a t3.small or larger, ports 80 and 443 open, a domain
+pointing at the instance's Elastic IP):
+
+1. Install PHP 8.3 with FPM and the `pgsql`, `mbstring`, `xml`, `curl`, `bcmath`, `intl`
+   and `zip` extensions, Composer, Node 24, Postgres, and nginx or Apache.
+2. Clone the repo to `/var/www/pixelforge`, copy `.env.example` to `.env`, run
+   `php artisan key:generate`, and set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`,
+   the `DB_*` values and the `PIXELFORGE_*` values.
+3. Give the web server's group write access: `chown -R $USER:www-data storage bootstrap/cache`
+   and `chmod -R 775 storage bootstrap/cache`.
+4. Install the web server config, the worker (supervisor or systemd) and the cron file, then
+   get a certificate with `certbot --nginx` or `certbot --apache`.
+5. Run `./deploy/deploy.sh`. Run it again for every later deploy.
+6. Register, then `php artisan users:admin you@example.com`.
 
 ## Tests
 

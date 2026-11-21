@@ -1,0 +1,11 @@
+# Laravel scheduler for Pixelforge. Without it, generations whose webhook never arrives
+# are never polled. schedule:run starts every minute and runs generations:reconcile every
+# 10 seconds within that minute.
+#
+#   cp deploy/cron/pixelforge /etc/cron.d/pixelforge && chmod 644 /etc/cron.d/pixelforge
+#
+# The user (www-data here) must be the web server's user: apache or nginx on Amazon
+# Linux / RHEL. Amazon Linux 2023 needs `dnf install -y cronie && systemctl enable --now crond`.
+# Files in /etc/cron.d must end with a newline.
+
+* * * * * www-data cd /var/www/pixelforge && php artisan schedule:run >> /dev/null 2>&1
