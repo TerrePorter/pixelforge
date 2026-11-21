@@ -4,8 +4,11 @@
 #   cp deploy/systemd/pixelforge-worker.service /etc/systemd/system/
 #   systemctl daemon-reload && systemctl enable --now pixelforge-worker
 #
-# User must be the web server's user: www-data on Ubuntu, apache (httpd) or nginx on
-# Amazon Linux / RHEL. Logs: journalctl -u pixelforge-worker -f
+# User must be PHP-FPM's user (`user =` in the FPM pool config), not necessarily the web
+# server's: www-data on Ubuntu, apache on Amazon Linux / RHEL even when nginx serves the
+# site (check /etc/php-fpm.d/www.conf). Group is the shared group that owns storage/,
+# bootstrap/cache/ and database/; UMask=0002 keeps the files the worker creates writable
+# by that group. Logs: journalctl -u pixelforge-worker -f
 #
 # deploy.sh runs `php artisan queue:restart`; the worker then exits after its current
 # job and systemd starts it again on the new code.
@@ -17,6 +20,7 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
+UMask=0002
 WorkingDirectory=/var/www/pixelforge
 ExecStart=/usr/bin/php artisan queue:work --sleep=1 --tries=0 --max-time=3600
 Restart=always

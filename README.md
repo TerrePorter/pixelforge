@@ -196,12 +196,28 @@ pointing at the instance's Elastic IP):
 2. Clone the repo to `/var/www/pixelforge`, copy `.env.example` to `.env`, run
    `php artisan key:generate`, and set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`,
    the `DB_*` values and the `PIXELFORGE_*` values.
-3. Give the web server's group write access: `chown -R $USER:www-data storage bootstrap/cache`
-   and `chmod -R 775 storage bootstrap/cache`.
+3. Give PHP-FPM's user and yours a shared group with write access to everything the app
+   writes, including `database/` if you use SQLite (SQLite writes a journal file next to the
+   database, so the folder needs write access too, not just the file; without it sessions
+   fail to save and every form returns 419 Page Expired):
+   `chown -R $USER:www-data storage bootstrap/cache database`,
+   `chmod -R g+rwX storage bootstrap/cache database` and
+   `find storage bootstrap/cache database -type d -exec chmod g+s {} +`.
+   Then make PHP-FPM create group-writable files: `systemctl edit php8.3-fpm` (`php-fpm` on
+   Amazon Linux), add `[Service]` and `UMask=0002`, and restart it. Without this, `artisan`
+   commands run as you can't clear or rewrite files PHP-FPM created.
 4. Install the web server config, the worker (supervisor or systemd) and the cron file, then
-   get a certificate with `certbot --nginx` or `certbot --apache`.
+   get a certificate with `certbot --nginx` or `certbot --apache`. In the worker and cron
+   files, set the user to PHP-FPM's user (`user =` in its pool config).
 5. Run `./deploy/deploy.sh`. Run it again for every later deploy.
 6. Register, then `php artisan users:admin you@example.com`.
+
+On Amazon Linux 2023 the steps are the same, with these differences: PHP-FPM runs as
+`apache` even when nginx serves the site, and there is no `www-data` group. Create it and
+add both users before step 3: `sudo groupadd www-data` and
+`sudo usermod -aG www-data apache` and `sudo usermod -aG www-data $USER` (then log in
+again). Use the systemd worker, since there is no supervisor package, and install cron with
+`sudo dnf install -y cronie && sudo systemctl enable --now crond`.
 
 ## Tests
 

@@ -4,8 +4,10 @@
 #
 #   cp deploy/cron/pixelforge /etc/cron.d/pixelforge && chmod 644 /etc/cron.d/pixelforge
 #
-# The user (www-data here) must be the web server's user: apache or nginx on Amazon
-# Linux / RHEL. Amazon Linux 2023 needs `dnf install -y cronie && systemctl enable --now crond`.
+# The user (www-data here) must be PHP-FPM's user (`user =` in the FPM pool config): apache
+# on Amazon Linux / RHEL, even when nginx serves the site. `umask 002` keeps the files it
+# creates writable by the shared www-data group.
+# Amazon Linux 2023 needs `dnf install -y cronie && systemctl enable --now crond`.
 # Files in /etc/cron.d must end with a newline.
 
-* * * * * www-data cd /var/www/pixelforge && php artisan schedule:run >> /dev/null 2>&1
+* * * * * www-data umask 002 && cd /var/www/pixelforge && php artisan schedule:run >> /dev/null 2>&1
