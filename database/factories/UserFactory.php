@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Services\Ledger;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -41,5 +43,15 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Give the user credits through the ledger, so the balance matches its history.
+     */
+    public function withCredits(string $usd = '10.00'): static
+    {
+        return $this->afterCreating(
+            fn (User $user) => app(Ledger::class)->purchase($user, Money::fromDecimal($usd)),
+        );
     }
 }

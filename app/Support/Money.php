@@ -96,4 +96,18 @@ final readonly class Money
 
         return ($this->nanos < 0 ? '-' : '')."{$dollars}.{$fraction}";
     }
+
+    /**
+     * For messages shown to people: "$5.00", "$0.0864", "-$0.25". Rounds half up to
+     * four decimals (sub-cent prices need them) and drops trailing zeros past two.
+     * Never used for arithmetic.
+     */
+    public function format(): string
+    {
+        $tenThousandths = intdiv(abs($this->nanos) + 50_000, 100_000);
+        $dollars = intdiv($tenThousandths, 10_000);
+        $fraction = rtrim(str_pad((string) ($tenThousandths % 10_000), 4, '0', STR_PAD_LEFT), '0');
+
+        return ($this->nanos < 0 ? '-' : '').'$'.$dollars.'.'.str_pad($fraction, 2, '0');
+    }
 }

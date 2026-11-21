@@ -19,6 +19,9 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            /** USD decimal strings with 9 places; null for guests. */
+            credits: { balance: string; reserved: string } | null;
+            flash: { success: string | null };
             [key: string]: unknown;
         };
     }

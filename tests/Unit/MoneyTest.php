@@ -84,3 +84,15 @@ test('a zero cost stays free after markup', function () {
 test('markup refuses negative amounts', function () {
     Money::nanos(-1)->withMarkup(2500);
 })->throws(InvalidArgumentException::class);
+
+test('formats amounts for people, keeping sub-cent digits', function (int $nanos, string $expected) {
+    expect(Money::nanos($nanos)->format())->toBe($expected);
+})->with([
+    'whole dollars' => [5_000_000_000, '$5.00'],
+    'cents' => [400_000_000, '$0.40'],
+    'sub-cent' => [86_250_000, '$0.0863'],
+    'rounds half up' => [467_343_750, '$0.4673'],
+    'tiny' => [40_000, '$0.00'],
+    'negative' => [-250_000_000, '-$0.25'],
+    'zero' => [0, '$0.00'],
+]);

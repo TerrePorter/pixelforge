@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -57,6 +58,16 @@ class GenerationController extends Controller
         );
 
         $generation = DB::transaction(function () use ($request, $user, $estimate, $ledger) {
+            // Lock the user's row so two submits at once can't both spend the same credits.
+            $balance = User::query()->lockForUpdate()->findOrFail($user->id)->balance();
+
+            // The worst case must be affordable: the real price is never higher than it.
+            if ($balance->isLessThan($estimate->maxCharge)) {
+                throw ValidationException::withMessages([
+                    'balance' => "This could cost up to {$estimate->maxCharge->format()} and your balance is {$balance->format()}. Buy credits to continue.",
+                ]);
+            }
+
             $generation = Generation::create([
                 'user_id' => $user->id,
                 'idempotency_key' => (string) Str::uuid(),

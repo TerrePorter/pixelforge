@@ -20,7 +20,7 @@ test('a submitted generation goes through the real queue to Pixelforge', functio
         'pixelforge.test/v1/generations' => Http::response(remoteGeneration('queued', ['id' => 'gen_e2e']), 202),
     ]);
 
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->withCredits()->create())
         ->post(route('generations.store'), [
             'prompt' => 'a lighthouse',
             'size' => '1024x1024',

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { formatUsd } from '@/lib/money';
+import { formatUsd, toNanos } from '@/lib/money';
 import { characterCount, estimate } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
+import { credits } from '@/routes';
 import { store } from '@/routes/generations';
 import type { ImageQuality, ImageSize, PricingTable } from '@/types/generation';
 
@@ -87,9 +88,26 @@ const breakdown = computed(() => {
     ];
 });
 
+const page = usePage();
+
+const balanceNanos = computed(() =>
+    page.props.credits ? toNanos(page.props.credits.balance) : 0,
+);
+
+/** The worst case has to fit in the balance; the server checks this too. */
+const canAfford = computed(
+    () => cost.value.maxChargeNanos <= balanceNanos.value,
+);
+
+/** Set by the server when the balance check fails there (e.g. it changed meanwhile). */
+const balanceError = computed(
+    () => (form.errors as Record<string, string | undefined>).balance,
+);
+
 const canSubmit = computed(
     () =>
         !form.processing &&
+        canAfford.value &&
         form.prompt.trim() !== '' &&
         promptLength.value <= MAX_PROMPT,
 );
@@ -269,6 +287,24 @@ function segment(active: boolean) {
                     You're charged the actual cost once it finishes, never more
                     than {{ formatUsd(cost.maxChargeNanos) }}. Failed
                     generations are free.
+                </p>
+                <p
+                    v-if="!canAfford || balanceError"
+                    class="mt-2 rounded-md bg-amber-50 px-3 py-2 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                    role="alert"
+                >
+                    <template v-if="!canAfford">
+                        Your balance is {{ formatUsd(balanceNanos) }}, so you
+                        can't cover the {{ formatUsd(cost.maxChargeNanos) }}
+                        this could cost.
+                    </template>
+                    <template v-else>{{ balanceError }}</template>
+                    <Link
+                        :href="credits()"
+                        class="ml-1 font-medium underline underline-offset-2"
+                    >
+                        Buy credits
+                    </Link>
                 </p>
                 <button
                     type="button"

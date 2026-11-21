@@ -16,7 +16,8 @@ const props = defineProps<{
 // never gets a pile-up of reloads (which also delays form submissions).
 const { start, stop } = usePoll(
     2500,
-    { only: ['generations'] },
+    // Credits too: the balance changes when a generation finishes.
+    { only: ['generations', 'credits'] },
     { autoStart: false, mode: 'rest' },
 );
 

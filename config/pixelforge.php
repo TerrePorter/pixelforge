@@ -22,6 +22,9 @@ return [
     // How long a generation may wait for Pixelforge to accept it before we give up.
     'submit_for_minutes' => 15,
 
+    // The fake "Buy credits" packs, in whole US dollars.
+    'credit_packs' => [1, 5, 20],
+
     // What users pay on top of Pixelforge's cost, in basis points (2500 = 25%).
     'markup_basis_points' => 2500,
 

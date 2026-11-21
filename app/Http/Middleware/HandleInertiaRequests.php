@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\GenerationStatus;
+use App\Models\User;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,12 +38,37 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        /** @var User|null $user */
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user()?->only(['id', 'name', 'email']),
+                'user' => $user?->only(['id', 'name', 'email']),
             ],
+            'credits' => fn () => $user === null ? null : $this->credits($user),
+            'flash' => [
+                'success' => $request->session()->get('success'),
+            ],
+        ];
+    }
+
+    /**
+     * The balance already has the worst-case price of running generations taken out;
+     * "reserved" says how much of that is only held, not spent.
+     *
+     * @return array{balance: string, reserved: string}
+     */
+    private function credits(User $user): array
+    {
+        $reserved = (int) $user->generations()
+            ->whereIn('status', [GenerationStatus::Pending, GenerationStatus::Queued, GenerationStatus::Processing])
+            ->sum('estimated_max_charge_nanos');
+
+        return [
+            'balance' => $user->fresh()?->balance()->toDecimal() ?? '0.000000000',
+            'reserved' => Money::nanos($reserved)->toDecimal(),
         ];
     }
 }

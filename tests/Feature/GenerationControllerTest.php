@@ -85,7 +85,7 @@ test('an expired image is flagged', function () {
 });
 
 test('submitting records the estimate, holds the worst case and queues the submission', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withCredits()->create();
 
     $this->actingAs($user)
         ->from(route('generate'))
@@ -110,7 +110,7 @@ test('submitting records the estimate, holds the worst case and queues the submi
 });
 
 test('blank reference image rows are ignored', function () {
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->withCredits()->create())
         ->post(route('generations.store'), generationInput(['reference_images' => ['', '  ', 'https://example.com/a.png']]))
         ->assertSessionHasNoErrors();
 
@@ -118,7 +118,7 @@ test('blank reference image rows are ignored', function () {
 });
 
 test('invalid input is rejected and nothing is created', function (array $input, string $field) {
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->withCredits()->create())
         ->post(route('generations.store'), generationInput($input))
         ->assertSessionHasErrors($field);
 
