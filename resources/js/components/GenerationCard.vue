@@ -28,13 +28,33 @@ const waitingLabels: Record<string, string> = {
     server_error: 'Pixelforge error, retrying',
 };
 
+/** Sending normally takes a second or two; after this we tell the user it's slow. */
+const SLOW_SUBMIT_SECONDS = 60;
+
+/**
+ * Still not sent to Pixelforge after a minute, with no known reason (e.g. the queue
+ * is backed up). It will still go out automatically, and nothing is charged until then.
+ */
+const isSlowToSubmit = computed(() => {
+    const g = props.generation;
+
+    return (
+        g.status === 'pending' &&
+        g.waiting_reason === null &&
+        g.created_at !== null &&
+        props.now - Date.parse(g.created_at) > SLOW_SUBMIT_SECONDS * 1000
+    );
+});
+
 const status = computed(() => {
     const g = props.generation;
 
     switch (g.status) {
         case 'pending':
             return {
-                label: waitingLabels[g.waiting_reason ?? ''] ?? 'Submitting',
+                label: isSlowToSubmit.value
+                    ? 'Delayed'
+                    : (waitingLabels[g.waiting_reason ?? ''] ?? 'Submitting'),
                 tone: 'waiting',
             };
         case 'queued':
@@ -184,6 +204,15 @@ const pill = computed(() =>
                     <template v-if="elapsed"> · {{ elapsed }}</template>
                 </span>
             </div>
+
+            <p
+                v-if="isSlowToSubmit"
+                class="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                role="status"
+            >
+                This hasn't been sent to Pixelforge yet. It will go
+                automatically, and you won't be charged until it runs.
+            </p>
 
             <p class="line-clamp-3 text-sm" :title="generation.prompt">
                 {{ generation.prompt }}
