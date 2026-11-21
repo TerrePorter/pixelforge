@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Cheap when nothing is stale: it only calls Pixelforge for generations that have gone
+// PIXELFORGE_POLL_AFTER_SECONDS without an update (webhooks normally get there first).
+Schedule::command('generations:reconcile')
+    ->everyTenSeconds()
+    ->withoutOverlapping();

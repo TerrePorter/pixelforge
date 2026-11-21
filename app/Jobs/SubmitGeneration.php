@@ -8,6 +8,7 @@ use App\Services\GenerationStateApplier;
 use App\Services\Pixelforge\PixelforgeClient;
 use App\Services\Pixelforge\PixelforgeException;
 use DateTimeInterface;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -20,8 +21,11 @@ use Throwable;
  * second (billable) generation: if an earlier attempt was accepted, Pixelforge just
  * replays it. Busy responses (rate, concurrency, overload) are retried after Retry-After
  * until submit_for_minutes runs out; definite rejections fail the generation for free.
+ *
+ * Unique per generation: while one is queued or waiting to retry, dispatching another is
+ * a no-op, so reconciliation can safely re-dispatch any pending generation.
  */
-class SubmitGeneration implements ShouldQueue
+class SubmitGeneration implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -31,6 +35,20 @@ class SubmitGeneration implements ShouldQueue
     public int $maxExceptions = 3;
 
     public function __construct(public Generation $generation) {}
+
+    public function uniqueId(): string
+    {
+        return (string) $this->generation->id;
+    }
+
+    /**
+     * Hold the unique lock a little longer than the job can run, so a worker that died
+     * mid-job can't block resubmission forever.
+     */
+    public function uniqueFor(): int
+    {
+        return (config()->integer('pixelforge.submit_for_minutes') + 5) * 60;
+    }
 
     public function retryUntil(): DateTimeInterface
     {

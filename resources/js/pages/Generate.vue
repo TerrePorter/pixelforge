@@ -12,10 +12,12 @@ const props = defineProps<{
 }>();
 
 // Poll our own server (never Pixelforge) while anything is still running.
+// "rest" waits for each response before scheduling the next, so a slow server
+// never gets a pile-up of reloads (which also delays form submissions).
 const { start, stop } = usePoll(
     2500,
     { only: ['generations'] },
-    { autoStart: false },
+    { autoStart: false, mode: 'rest' },
 );
 
 const hasRunning = computed(() =>
