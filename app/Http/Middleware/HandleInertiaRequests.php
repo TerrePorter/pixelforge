@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $user?->only(['id', 'name', 'email']),
+                'user' => $user?->only(['id', 'name', 'email', 'is_admin']),
             ],
             'credits' => fn () => $user === null ? null : $this->credits($user),
             'flash' => [

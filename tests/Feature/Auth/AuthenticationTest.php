@@ -59,5 +59,6 @@ test('signed-in users see the generate page with only safe user fields shared', 
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'is_admin' => false,
             ]));
 });

@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Services\Pixelforge\PixelforgeClient;
 use App\Services\Pixelforge\Pricing\Pricing;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -33,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Operators only: the admin report shows every user's spend and our costs.
+        Gate::define('admin', fn (User $user): bool => $user->is_admin);
     }
 
     /**

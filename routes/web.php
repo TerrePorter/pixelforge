@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\GenerationController;
 use App\Http\Controllers\PixelforgeWebhookController;
@@ -16,4 +17,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/credits', [CreditController::class, 'index'])->name('credits');
     Route::post('/credits', [CreditController::class, 'store'])->name('credits.store');
+
+    Route::get('/admin/report', ReportController::class)->middleware('can:admin')->name('admin.report');
 });

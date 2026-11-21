@@ -43,6 +43,20 @@ class PixelforgeClient
     }
 
     /**
+     * GET /v1/usage: what Pixelforge billed this API key, per UTC day (by completion
+     * day), for an inclusive date range of at most 92 days.
+     *
+     * @return array<array-key, mixed>
+     */
+    public function usage(string $startDate, string $endDate): array
+    {
+        return $this->send(fn (PendingRequest $http) => $http->get('usage', [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+        ]));
+    }
+
+    /**
      * @param  Closure(PendingRequest): Response  $request
      * @return array<array-key, mixed>
      */

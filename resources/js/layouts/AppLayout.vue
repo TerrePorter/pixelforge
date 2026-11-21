@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { formatUsd, toNanos } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import { credits, generate, logout } from '@/routes';
+import { report } from '@/routes/admin';
 
 defineProps<{
     title: string;
@@ -57,6 +58,13 @@ const navLink = (active: boolean) =>
                         :class="navLink($page.component === 'Credits')"
                     >
                         Credits
+                    </Link>
+                    <Link
+                        v-if="$page.props.auth.user?.is_admin"
+                        :href="report()"
+                        :class="navLink($page.component === 'admin/Report')"
+                    >
+                        Admin
                     </Link>
                 </nav>
                 <div class="flex items-center gap-3 text-sm">

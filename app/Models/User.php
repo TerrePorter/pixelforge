@@ -33,6 +33,16 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Match the column defaults, so a freshly created user has them without a reload.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'balance_nanos' => 0,
+        'is_admin' => false,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
